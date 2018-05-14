@@ -1,4 +1,10 @@
-let page, pageURL, pageTitle
+let page;
+let pageURL;
+let pageTitle;
+const container = document.querySelector('.container');
+const priceRegex = new RegExp(/(CHF|USD|EUR|\$|\u20AC)\s?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))|(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s?(USD|EUR|CHF|\$|\u20AC)/gi);
+
+
 chrome.tabs.query({active: true, currentWindow: true}, tabs => {
   const tab = tabs[0]
   chrome.tabs.executeScript(tab.id, {
@@ -12,13 +18,53 @@ chrome.tabs.query({active: true, currentWindow: true}, tabs => {
 
 
 function init() {
-  const price = page.querySelectorAll('[class*="price"]')
+  const price = getPrice();
   const name = page.querySelectorAll('[class*="name"]')
   const title = page.querySelector('title').innerText.trim()
 
   const titleNode = findTitleElement(title)
-  console.log('TitleNode', titleNode)
-  console.log({price, name, title})
+
+  printToScreen({ price, name, titleNode });
+}
+
+
+function getPrice() {
+  const priceEls = Array.from(page.querySelectorAll('[class*="price"]'));
+  console.log({priceEls})
+  if (!priceEls.length) {
+    console.warn('No price elements found...');
+    return '';
+  }
+
+  const priceStrings = priceEls
+    .map(node => node.innerText)
+    .map(removeAllWhitespace);
+
+  priceStrings.map(s => {
+    console.log(s, '->>>', priceRegex, s.match(priceRegex))
+  })
+}
+
+
+function removeAllWhitespace(string) {
+  return string.replace(/\s/g,'');
+}
+
+
+function printToScreen({ price, name, title }) {
+  const priceEl = document.createElement('div');
+  priceEl.innerHTML = price;
+
+  const nameEl = document.createElement('div');
+  nameEl.innerHTML = name;
+
+  const titleEl = document.createElement('div');
+  titleEl.innerHTML = title;
+
+  container.appendChild(priceEl);
+  container.appendChild(nameEl);
+  container.appendChild(titleEl);
+  console.log({ price, name, title });
 }
 
 // find title:
@@ -39,5 +85,5 @@ function findTitleElement(title) {
       && node.innerText.trim().length <= title.length
   })
 
-  console.log({elements})
+  console.log('title nodes', {elements})
 }
